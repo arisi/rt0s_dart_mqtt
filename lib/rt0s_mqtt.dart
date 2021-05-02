@@ -1,4 +1,4 @@
-library mqttapi;
+library rt0s_mqtt;
 
 import 'dart:async';
 import 'dart:convert';
