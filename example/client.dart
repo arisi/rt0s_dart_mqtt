@@ -1,7 +1,6 @@
 import 'dart:isolate';
 
 import 'package:rt0s_mqtt/rt0s_mqtt.dart';
-import 'package:args/args.dart';
 import 'dart:io';
 
 void cli(SendPort sendPort) {
@@ -11,15 +10,11 @@ void cli(SendPort sendPort) {
 }
 
 main(List<String> args) async {
-  var parser = ArgParser();
-  parser.addOption('id', defaultsTo: "test");
-  parser.addOption('host', defaultsTo: "mqtt.rt0s.com");
-  var opts = parser.parse(args);
-  print(["MQTTapi Example", opts['id'], opts['host']]);
+  print(["MQTTapi Example"]);
   MQTTapi mq = new MQTTapi(
-    id: opts['id'],
+    id: "test",
     descr: "test",
-    host: opts['host'],
+    host: "mqtt.rt0s.com",
     user: "eila",
     pw: "zilakka",
     ping: 20,
