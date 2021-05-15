@@ -60,7 +60,7 @@ class MQTTapi {
   var lastPing = stamp();
   void pongCallback() {
     var now = stamp();
-    //print('MQTTapi pongCallback ${now - lastPing}');
+    print('MQTTapi pongCallback ${now - lastPing}');
     lastPing = now;
   }
 
