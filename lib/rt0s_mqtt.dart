@@ -128,7 +128,7 @@ class MQTTapi {
       String descr,
       String host = 'mqtt.rt0s.com',
       int port = 1884,
-      int ping = 20,
+      int ping = 10,
       String user,
       String pw}) {
     _host = host;
