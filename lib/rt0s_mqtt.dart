@@ -66,6 +66,9 @@ class MQTTapi {
 
   void onAutoReconnect() {
     print('MQTTapi onAutoReconnect');
+    subscribe("/dn/$_id/#", (String topic, Map<String, dynamic> msg) {
+      print(["API CHECK", msg['req']['args']]);
+    });
   }
 
   void publish(String topic, Map<String, dynamic> msg, {bool retain = false}) {
@@ -194,6 +197,7 @@ class MQTTapi {
       done = true;
       print('MQTTapi connecting.... xx');
       client.autoReconnect = true;
+      //client.resubscribeOnAutoReconnect = false;
       client.connectionMessage = connMess;
       try {
         await client.connect();
