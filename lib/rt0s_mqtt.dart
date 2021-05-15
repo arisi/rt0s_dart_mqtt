@@ -192,10 +192,12 @@ class MQTTapi {
           .withWillTopic("/bc/$_id/state")
           .withWillQos(MqttQos.exactlyOnce);
       done = true;
-      print('MQTTapi connecting....');
+      print('MQTTapi connecting.... xx');
+      client.autoReconnect = true;
       client.connectionMessage = connMess;
       try {
         await client.connect();
+        print("conn ok");
         client.autoReconnect = true;
 
         subscribe("/dn/$_id/#", (String topic, Map<String, dynamic> msg) {
