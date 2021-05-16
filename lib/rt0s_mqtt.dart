@@ -20,6 +20,7 @@ class MQTTapi {
   Map<String, dynamic> apis = {};
   Function _onBroadcast = null;
   Function _onEvent = null;
+  bool online = false;
 
   static int stampms() => DateTime.now().millisecondsSinceEpoch;
 
@@ -51,26 +52,28 @@ class MQTTapi {
 
   void onConnected() {
     //print('MQTTapi connected....');
-    if (_onEvent != null) _onEvent("online");
+    online = true;
+    if (_onEvent != null) _onEvent(online, "online");
     broadcast("state", {"state": "online", "stamp": stamp()}, retain: true);
   }
 
   void onDisonnected() {
+    online = false;
     print('MQTTapi disconnected');
-    if (_onEvent != null) _onEvent("offline");
+    if (_onEvent != null) _onEvent(online, "offline");
   }
 
   var lastPing = stamp();
   void pongCallback() {
     var now = stamp();
-    if (_onEvent != null) _onEvent("ping");
+    if (_onEvent != null) _onEvent(online, "ping");
     print('MQTTapi pongCallback ${now - lastPing}');
     lastPing = now;
   }
 
   void onAutoReconnect() {
     print('MQTTapi onAutoReconnect');
-    if (_onEvent != null) _onEvent("autoreconnect");
+    if (_onEvent != null) _onEvent(online, "autoreconnect");
     // subscribe("/dn/$_id/#", (String topic, Map<String, dynamic> msg) {
     //   print(["API CHECK", msg['req']['args']]);
     // });
