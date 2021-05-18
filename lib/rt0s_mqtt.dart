@@ -185,6 +185,15 @@ class MQTTapi {
     });
   }
 
+  reconnect(String user, String pw, String id) async {
+    _user = user;
+    _pw = pw;
+    _id = id;
+    client.disconnect();
+    await client.connect();
+    print("reconn ok");
+  }
+
   connect(
       {bool wait = true,
       Function onBroadcast = null,
