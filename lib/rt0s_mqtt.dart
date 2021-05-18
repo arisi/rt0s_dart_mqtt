@@ -185,6 +185,59 @@ class MQTTapi {
     });
   }
 
+  do_subs() {
+    subscribe("/dn/$_id/#", (String topic, Map<String, dynamic> msg) {
+      //print(["API CHECK", msg['req']['args']]);
+      if (apis.containsKey(msg['req']['args'][0])) {
+        var api = apis[msg['req']['args'][0]];
+        var reply = api['f'](msg);
+        if (reply == null) {
+          //print("api will reply later");
+          return;
+        }
+        msg['reply'] = reply;
+        //print(["API HIT", api, msg['req']['args'], msg['reply']]);
+      } else if (apis.containsKey("*")) {
+        var api = apis["*"];
+        var reply = api['f'](msg);
+        if (reply == null) {
+          return;
+        }
+        msg['reply'] = reply;
+      } else
+        msg['reply'] = {
+          "error": "no api '${msg['req']['args'][0]}' at '${_id}'"
+        };
+      publish("/up/${msg['src']}/${msg['mid']}", msg);
+      return;
+    });
+
+    subscribe("/up/$_id/#", (String topic, Map<String, dynamic> msg) {
+      if (reqs.containsKey(msg['mid'])) {
+        var r = reqs[msg['mid']];
+        if (!r['done']) {
+          msg['dur'] = stampms() - r['sent'];
+          msg['tries'] = r['tries'];
+          r['completer'].complete(msg);
+          r['done'] = true;
+        } else {
+          print(["extra reply", msg]);
+        }
+      } else {
+        print(["stray reply", msg]);
+      }
+      return;
+    });
+
+    subscribe("/bc/#", (String topic, Map<String, dynamic> msg) {
+      RegExp regExp = new RegExp(r"^\/bc\/" + _id);
+      if (!regExp.hasMatch(topic)) {
+        if (_onBroadcast != null) _onBroadcast(topic, msg);
+      }
+      return;
+    });
+  }
+
   reconnect(String user, String pw, String id) async {
     _user = user;
     _pw = pw;
@@ -192,6 +245,7 @@ class MQTTapi {
     client.disconnect();
     await client.connect();
     print("reconn ok");
+    do_subs();
   }
 
   connect(
@@ -220,61 +274,11 @@ class MQTTapi {
       client.autoReconnect = true;
       client.resubscribeOnAutoReconnect = true;
       client.connectionMessage = connMess;
+      client.autoReconnect = true;
       try {
         await client.connect();
         print("conn ok");
-        client.autoReconnect = true;
-
-        subscribe("/dn/$_id/#", (String topic, Map<String, dynamic> msg) {
-          //print(["API CHECK", msg['req']['args']]);
-          if (apis.containsKey(msg['req']['args'][0])) {
-            var api = apis[msg['req']['args'][0]];
-            var reply = api['f'](msg);
-            if (reply == null) {
-              //print("api will reply later");
-              return;
-            }
-            msg['reply'] = reply;
-            //print(["API HIT", api, msg['req']['args'], msg['reply']]);
-          } else if (apis.containsKey("*")) {
-            var api = apis["*"];
-            var reply = api['f'](msg);
-            if (reply == null) {
-              return;
-            }
-            msg['reply'] = reply;
-          } else
-            msg['reply'] = {
-              "error": "no api '${msg['req']['args'][0]}' at '${_id}'"
-            };
-          publish("/up/${msg['src']}/${msg['mid']}", msg);
-          return;
-        });
-
-        subscribe("/up/$_id/#", (String topic, Map<String, dynamic> msg) {
-          if (reqs.containsKey(msg['mid'])) {
-            var r = reqs[msg['mid']];
-            if (!r['done']) {
-              msg['dur'] = stampms() - r['sent'];
-              msg['tries'] = r['tries'];
-              r['completer'].complete(msg);
-              r['done'] = true;
-            } else {
-              print(["extra reply", msg]);
-            }
-          } else {
-            print(["stray reply", msg]);
-          }
-          return;
-        });
-
-        subscribe("/bc/#", (String topic, Map<String, dynamic> msg) {
-          RegExp regExp = new RegExp(r"^\/bc\/" + _id);
-          if (!regExp.hasMatch(topic)) {
-            if (_onBroadcast != null) _onBroadcast(topic, msg);
-          }
-          return;
-        });
+        do_subs();
 
         new Timer.periodic(Duration(milliseconds: 1000), (Timer t) {
           var now = stamp();
